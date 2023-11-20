@@ -5,6 +5,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.net.URL;
 import java.util.ArrayList;
+import Board.Utils;
 
 import Board.Game;
 import Pieces.*;
@@ -19,6 +20,8 @@ public class View extends JFrame {
     private final Color darkBlockMove = new Color(170,162,58);
     private final Color lightBlockMove = new Color(205,210,106);
 
+    private boolean isPlayerTurn;
+
 
     public String printArray(ArrayList<Integer[]> array){
         String result = "";
@@ -32,6 +35,7 @@ public class View extends JFrame {
     public View(){
         game = new Game();
         panels = new JPanel[8][8];
+        isPlayerTurn = true;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new GridLayout(8,8));
         for (int i = 0; i < 8; i++) {
@@ -52,56 +56,51 @@ public class View extends JFrame {
                     panels[i][j].add(imgLabel);
                 }
 
+                if(isPlayerTurn) {
+                    panels[i][j].addMouseListener(new MouseListener() {
 
-                panels[i][j].addMouseListener(new MouseListener() {
-
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        Piece currentPiece = game.getBoard()[finalI][finalJ].getPiece();
-                        if(currentPiece != null && currentPiece.getColor() == Color.WHITE){
-                            initialPanel = panels[finalI][finalJ];
-                            initialMove = new int[]{finalI, finalJ};
-                            getPieceMove(currentPiece, finalI, finalJ);
-                        }
-                        else if(panels[finalI][finalJ].getBackground() == lightBlockMove || panels[finalI][finalJ].getBackground() == darkBlockMove){
-                            if(panels[finalI][finalJ] != initialPanel){
-                                Component jPanelComponent = initialPanel.getComponents()[0];
-                                initialPanel.removeAll();
-                                initialPanel.revalidate();
-                                initialPanel.repaint();
-                                panels[finalI][finalJ].add(jPanelComponent);
-                                panels[finalI][finalJ].revalidate();
-                                panels[finalI][finalJ].repaint();
-                                game.movePiece(initialMove, new int[]{finalI, finalJ});
-                                System.out.println(game.toString());
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            Piece currentPiece = game.getBoard()[finalI][finalJ].getPiece();
+                            if (currentPiece != null && currentPiece.getColor() == Color.WHITE) {
+                                initialPanel = panels[finalI][finalJ];
+                                initialMove = new int[]{finalI, finalJ};
+                                getPieceMove(currentPiece, finalI, finalJ);
+                            } else if (panels[finalI][finalJ].getBackground() == lightBlockMove || panels[finalI][finalJ].getBackground() == darkBlockMove) {
+                                movePiece(finalI, finalJ);
+                                isPlayerTurn = false;
+                                handleComputerTurn();
                             }
+                        }
+
+                        @Override
+                        public void mousePressed(MouseEvent e) {
 
                         }
-                    }
 
-                    @Override
-                    public void mousePressed(MouseEvent e) {
+                        @Override
+                        public void mouseReleased(MouseEvent e) {
 
-                    }
+                        }
 
-                    @Override
-                    public void mouseReleased(MouseEvent e) {
+                        @Override
+                        public void mouseEntered(MouseEvent e) {
 
-                    }
+                        }
 
-                    @Override
-                    public void mouseEntered(MouseEvent e) {
+                        @Override
+                        public void mouseExited(MouseEvent e) {
 
-                    }
+                        }
+                    });
+                }
 
-                    @Override
-                    public void mouseExited(MouseEvent e) {
-
-                    }
-                });
                 add(panels[i][j]);
             }
         }
+
+
+
         setSize(600,600);
         setVisible(true);
     }
@@ -128,8 +127,55 @@ public class View extends JFrame {
         }
     }
 
-    public void movePiece(){
+    public void movePiece(int finalI, int finalJ){
+        if(panels[finalI][finalJ] != initialPanel){
+            Component jPanelComponent = initialPanel.getComponents()[0];
+            initialPanel.removeAll();
+            initialPanel.revalidate();
+            initialPanel.repaint();
+            panels[finalI][finalJ].add(jPanelComponent);
+            panels[finalI][finalJ].revalidate();
+            panels[finalI][finalJ].repaint();
+            game.movePiece(initialMove, new int[]{finalI, finalJ});
+            System.out.println(game.toString());
+        }
 
+        for (int k = 0; k < 8; k++) {
+            for (int l = 0; l < 8; l++) {
+                if ((k + l) % 2 == 0) {
+                    panels[k][l].setBackground(darkBlock);
+                } else {
+                    panels[k][l].setBackground(lightBlock);
+                }
+            }
+        }
+
+    }
+
+    public void moveComputerPiece(Integer[][] move){
+        int initialMoveI = move[0][0];
+        int initialMoveJ  = move[0][1];
+
+        int finalMoveI = move[1][0];
+        int finalMoveJ = move[1][1];
+
+        Component jPanelComponent = panels[initialMoveI][initialMoveJ].getComponents()[0];
+        panels[initialMoveI][initialMoveJ].removeAll();
+        panels[initialMoveI][initialMoveJ].revalidate();
+        panels[initialMoveI][initialMoveJ].repaint();
+
+        panels[finalMoveI][finalMoveJ].add(jPanelComponent);
+        panels[finalMoveI][finalMoveJ].revalidate();
+        panels[finalMoveI][finalMoveJ].repaint();
+
+    }
+
+    public void handleComputerTurn(){
+        Integer[][] move = Utils.miniMax(game);
+        moveComputerPiece(move);
+        game.movePiece(new int[]{move[0][0], move[0][1]}, new int[]{move[1][0], move[1][1]});
+
+        isPlayerTurn = true;
     }
 
 }
